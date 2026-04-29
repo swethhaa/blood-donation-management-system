@@ -32,6 +32,7 @@
     <table class="table table-bordered mt-3">
         <tr>
             <th>ID</th>
+            <th>Hospital</th>
             <th>Blood Group</th>
             <th>Units</th>
             <th>Status</th>
@@ -40,15 +41,16 @@
         {% for r in requests %}
         <tr>
             <td>{{ loop.index }}</td>
+            <td>{{ r[4] }}</td>
             <td>{{ r[1] }}</td>
             <td>{{ r[2] }}</td>
 
             <td>
-                {% if r[3] == 'Available' or r[4] == 'Available' %}
+                {% if r[3] == 'Available' or r[3] == 'Available' %}
                     <span class="badge bg-success">Available</span>
-                {% elif r[3] == 'Not Available' or r[4] == 'Not Available' %}
+                {% elif r[3] == 'Not Available' or r[3] == 'Not Available' %}
                     <span class="badge bg-danger">Not Available</span>
-                {% elif r[3] == 'Approved' or r[4] == 'Approved' %}
+                {% elif r[3] == 'Approved' or r[3] == 'Approved' %}
                     <span class="badge bg-success">Approved</span>
                 {% else %}
                     <span class="badge bg-secondary">Unknown</span>

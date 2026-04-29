@@ -1,20 +1,15 @@
 from app import app
 from datetime import date
-
-# Test the donate POST endpoint
 print("Testing donate POST endpoint...")
 
 with app.test_client() as client:
     with app.test_request_context():
-        # First, login as admin
         response = client.post('/login', data={
             'username': 'admin',
             'password': 'admin123'
         }, follow_redirects=True)
         
         print(f"Login response: {response.status_code}")
-        
-        # Now test the donate endpoint
         response = client.post('/donate', data={
             'donorid': '14',
             'bloodgroup': 'B+',

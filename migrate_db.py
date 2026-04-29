@@ -2,8 +2,6 @@ import MySQLdb
 try:
     conn = MySQLdb.connect(host='127.0.0.1', user='root', password='Swe21tha07$', db='bloodbank')
     cur = conn.cursor()
-    
-    # Check if columns exist
     cur.execute("SHOW COLUMNS FROM hospital LIKE 'username'")
     if not cur.fetchone():
         cur.execute("ALTER TABLE hospital ADD COLUMN username VARCHAR(50) UNIQUE")
@@ -13,8 +11,6 @@ try:
     if not cur.fetchone():
         cur.execute("ALTER TABLE hospital ADD COLUMN password VARCHAR(100)")
         print("Added password column.")
-        
-    # Update existing rows with dummy usernames so we don't have NULLs
     cur.execute("SELECT hospitalid, hospitalname FROM hospital WHERE username IS NULL")
     rows = cur.fetchall()
     for row in rows:

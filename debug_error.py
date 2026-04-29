@@ -7,8 +7,6 @@ try:
     print("Donor table columns:")
     for col in result:
         print(f"  {col}")
-    
-    # Test SELECT *
     cur.execute("SELECT * FROM donor LIMIT 1")
     donor = cur.fetchone()
     print(f"\nSample donor record has {len(donor)} fields:")

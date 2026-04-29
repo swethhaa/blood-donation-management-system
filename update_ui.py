@@ -6,7 +6,7 @@ template_dir = r"c:\Users\sweth\Desktop\bloodbankproject\templates"
 new_nav = """<nav class="navbar navbar-dark bg-danger shadow-sm py-3 mb-4 border-bottom border-4 border-danger border-opacity-75">
     <div class="container d-flex justify-content-between align-items-center">
         <a href="/dashboard" class="navbar-brand fw-bold fs-4 mb-0 text-decoration-none">
-            <span class="fs-3 me-2">🩸</span>Blood Bank System
+            <span class="fs-3 me-2">🩸</span>BloodNet
         </a>
         <div class="d-flex gap-2 flex-wrap">
             <a href="/dashboard" class="btn btn-outline-light border-0 px-3 fw-semibold">Dashboard</a>
@@ -17,9 +17,6 @@ new_nav = """<nav class="navbar navbar-dark bg-danger shadow-sm py-3 mb-4 border
         </div>
     </div>
 </nav>"""
-
-# Regex to match the old nav block.
-# Since it spans multiple lines, we use re.DOTALL
 nav_regex = re.compile(r'<nav class="navbar navbar-dark bg-danger">.*?</nav>', re.DOTALL)
 
 for filename in os.listdir(template_dir):

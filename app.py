@@ -37,10 +37,8 @@ def build_donors_with_status(donors_list):
         try:
             donorid, name, age, gender, bloodgroup, lastdate, units = donor
         except (ValueError, TypeError):
-            # If unpacking fails, skip this donor
             continue
         
-        # Determine eligibility status
         if lastdate is None or lastdate == '' or lastdate == '0000-00-00':
             status = "✓ First-time donor"
             eligible = True
@@ -160,14 +158,10 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        
-        # Hardcoded Admin Login
         if username == 'admin' and password == 'admin123':
             session['role'] = 'admin'
             session['username'] = 'Admin'
             return redirect(url_for('dashboard'))
-            
-        # Check Hospital Login
         cur = mysql.connection.cursor()
         cur.execute("SELECT hospitalid, hospitalname FROM hospital WHERE username=%s AND password=%s", (username, password))
         hospital = cur.fetchone()
@@ -191,8 +185,6 @@ def signup():
         password = request.form['password']
         
         cur = mysql.connection.cursor()
-        
-        # Check if username exists
         cur.execute("SELECT * FROM hospital WHERE username=%s", (username,))
         if cur.fetchone():
             return render_template('signup.html', error='Username already exists!')
@@ -210,9 +202,6 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# =========================
-# HOME
-# =========================
 @app.route('/')
 def index():
     if 'role' in session:
@@ -222,9 +211,6 @@ def index():
             return redirect(url_for('hospital_dashboard'))
     return redirect(url_for('login'))
 
-# =========================
-# DONORS
-# =========================
 @app.route('/donors')
 @admin_required
 def donors():
@@ -250,8 +236,6 @@ def add_donor():
         units = int(request.form['units'])
 
         cur = mysql.connection.cursor()
-
-        # Check if donor already exists
         cur.execute("SELECT donorid, lastdonationdate FROM donor WHERE name=%s", (name,))
         existing_donor = cur.fetchone()
 
@@ -341,15 +325,11 @@ def delete_donor(id):
     cur.close()
     return redirect(url_for('donors'))
 
-# =========================
-# BLOOD STOCK
-# =========================
 @app.route('/bloodstock')
 @admin_required
 def bloodstock():
     cur = mysql.connection.cursor()
 
-    # ✅ Fetch proper stock data
     cur.execute("""
         SELECT bloodgroup, unitsavailable 
         FROM bloodstock 
@@ -363,9 +343,6 @@ def bloodstock():
 
     return render_template('bloodstock.html', stock=data)
 
-# =========================
-# HOSPITALS
-# =========================
 @app.route('/hospitals')
 @admin_required
 def hospitals():
@@ -393,15 +370,16 @@ def add_hospital():
 
     return render_template('addhospital.html')
 
-# =========================
-# REQUESTS (CORE LOGIC)
-# =========================
 @app.route('/requests')
 @admin_required
 def requests_page():
     cur = mysql.connection.cursor()
 
-    cur.execute("SELECT * FROM bloodrequest")
+    cur.execute("""
+        SELECT br.requestid, br.bloodgroupreq, br.units, br.status, h.hospitalname 
+        FROM bloodrequest br
+        JOIN hospital h ON br.hospitalid = h.hospitalid
+    """)
     data = cur.fetchall()
 
     cur.close()
@@ -411,7 +389,6 @@ def requests_page():
 @app.route('/add_request', methods=['GET', 'POST'])
 @login_required
 def add_request():
-    # Only hospitals should be able to make requests
     if session.get('role') != 'hospital':
         return redirect(url_for('dashboard'))
 
@@ -462,9 +439,6 @@ def hospital_dashboard():
     
     return render_template('hospital_dashboard.html', requests=data)
 
-# =========================
-# DONATION MODULE (IMPORTANT)
-# =========================
 @app.route('/donate', methods=['GET', 'POST'])
 @admin_required
 def donate():
@@ -474,8 +448,6 @@ def donate():
             bloodgroup = request.form.get('bloodgroup', '').strip().replace(" ", "").upper()
             units = int(request.form.get('units', 1))
             donation_date = date.today()
-
-            # Validate donor selection
             if not donorid:
                 cur = mysql.connection.cursor()
                 cur.execute("SELECT * FROM donor")
@@ -483,8 +455,6 @@ def donate():
                 cur.close()
                 donors_with_status = build_donors_with_status(donors)
                 return render_template('donate.html', donors_with_status=donors_with_status, error="Please select a donor.")
-
-            # Validate blood group selection
             if not bloodgroup:
                 cur = mysql.connection.cursor()
                 cur.execute("SELECT * FROM donor")
@@ -492,8 +462,6 @@ def donate():
                 cur.close()
                 donors_with_status = build_donors_with_status(donors)
                 return render_template('donate.html', donors_with_status=donors_with_status, error="Please select a blood group.")
-
-            # Validate units (max 1 unit per donation)
             if units > 1 or units < 1:
                 cur = mysql.connection.cursor()
                 cur.execute("SELECT * FROM donor")
@@ -503,8 +471,6 @@ def donate():
                 donors_with_status = build_donors_with_status(donors)
                 error_msg = f"Donation Rejected: Maximum 1 unit allowed per donation. You entered {units} units."
                 return render_template('donate.html', donors_with_status=donors_with_status, error=error_msg)
-
-            # Get donor info and check 90-day rule
             cur = mysql.connection.cursor()
             cur.execute("SELECT name, lastdonationdate FROM donor WHERE donorid=%s", (donorid,))
             donor_data = cur.fetchone()
@@ -520,8 +486,6 @@ def donate():
             
             donor_name = donor_data[0]
             last_date = donor_data[1]
-            
-            # Check 90-day eligibility
             if last_date and last_date != '0000-00-00':
                 if isinstance(last_date, str):
                     try:
@@ -542,15 +506,11 @@ def donate():
                         error_msg = f"Donation Rejected: {donor_name} is not medically eligible yet. Only {days_since} days have passed since their last donation on {last_date}. They will be eligible again on {next_eligible_date} (90 days required)."
                         donors_with_status = build_donors_with_status(donors)
                         return render_template('donate.html', donors_with_status=donors_with_status, error=error_msg)
-
-            # Update donor's last donation date and total units
             cur.execute("""
                 UPDATE donor 
                 SET lastdonationdate=%s, units = units + %s 
                 WHERE donorid=%s
             """, (donation_date, units, donorid))
-
-            # Insert donation record
             cur.execute("""
                 INSERT INTO donation(donorid, bloodgroup, unitsdonated, donationdate)
                 VALUES (%s, %s, %s, %s)
@@ -558,12 +518,8 @@ def donate():
 
             mysql.connection.commit()
             cur.close()
-
-            # Update blood stock
             update_stock(bloodgroup, units, "ADD")
             add_expiry(bloodgroup, units, donation_date)
-            
-            # Try to fulfill pending requests
             fulfill_pending_requests(bloodgroup)
 
             return redirect(url_for('donors'))
@@ -576,13 +532,10 @@ def donate():
             donors_with_status = build_donors_with_status(donors)
             error_msg = f"Error recording donation: {str(e)}"
             return render_template('donate.html', donors_with_status=donors_with_status, error=error_msg)
-
-    # GET request - show donation form
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM donor")
     donors = cur.fetchall()
     cur.close()
-    
     donors_with_status = build_donors_with_status(donors)
 
     return render_template('donate.html', donors_with_status=donors_with_status)

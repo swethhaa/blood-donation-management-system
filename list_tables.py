@@ -2,15 +2,11 @@ import MySQLdb
 try:
     conn = MySQLdb.connect(host='127.0.0.1', user='root', password='Swe21tha07$', db='bloodbank')
     cur = conn.cursor()
-    
-    # Show all tables
     cur.execute("SHOW TABLES")
     tables = cur.fetchall()
     print("Tables in bloodbank database:")
     for table in tables:
         print(f"  - {table[0]}")
-    
-    # Check bloodexpiry
     print("\nLooking for expiry/blood stock related tables...")
     for table in tables:
         table_name = table[0]

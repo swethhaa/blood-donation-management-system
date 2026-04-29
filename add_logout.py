@@ -7,9 +7,6 @@ for filename in os.listdir(template_dir):
         filepath = os.path.join(template_dir, filename)
         with open(filepath, "r", encoding="utf-8") as f:
             content = f.read()
-            
-        # Add Logout button to navbar if it's the admin navbar
-        # We look for the "Requests" button and append the Logout button after it
         if 'href="/requests"' in content and 'href="/logout"' not in content:
             content = content.replace(
                 '<a href="/requests" class="btn btn-outline-light border-0 px-3 fw-semibold">Requests</a>',

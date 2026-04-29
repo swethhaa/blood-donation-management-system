@@ -1,8 +1,6 @@
 from app import app, mysql, build_donors_with_status
 from flask import request
 from datetime import date
-
-# Test the build_donors_with_status function
 print("Testing build_donors_with_status function...")
 
 with app.app_context():
